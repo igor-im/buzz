@@ -1,0 +1,140 @@
+quickstart: false
+fullnameOverride: buzz
+image:
+  repository: ghcr.io/block/buzz
+  tag: sha-12670bd
+  digest: sha256:9bdf91392988dae96a7b25fe72d91d08fe7a109c1df4bf2e13081b91dc4bef80
+  pullPolicy: IfNotPresent
+replicaCount: 1
+relayUrl: wss://buzz.tailc69d48.ts.net
+mediaBaseUrl: https://buzz.tailc69d48.ts.net/media
+secrets:
+  existingSecret: buzz-runtime
+relay:
+  requireAuthToken: true
+  requireRelayMembership: true
+  allowNipOaAuth: true
+  huddleAudioAvailable: true
+  corsOrigins:
+  - https://buzz.tailc69d48.ts.net
+  resources:
+    requests:
+      cpu: 250m
+      memory: 512Mi
+    limits:
+      cpu: '2'
+      memory: 2Gi
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 1000
+    runAsGroup: 1000
+    fsGroup: 1000
+    seccompProfile:
+      type: RuntimeDefault
+  extraEnv:
+  - name: BUZZ_SERVE_GIT_WEB_GUI
+    value: 'true'
+podDisruptionBudget:
+  enabled: false
+persistence:
+  git:
+    enabled: false
+    mountPath: /var/lib/buzz/git
+    size: 10Gi
+postgresql:
+  enabled: true
+  fullnameOverride: buzz-postgresql
+  auth:
+    database: buzz
+    username: buzz
+    existingSecret: buzz-runtime
+    secretKeys:
+      adminPasswordKey: postgres-password
+  persistence:
+    enabled: true
+    storageClass: ceph-rbd
+    size: 10Gi
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: '1'
+      memory: 1Gi
+redis:
+  enabled: true
+  fullnameOverride: buzz-redis
+  architecture: standalone
+  auth:
+    enabled: true
+    existingSecret: buzz-runtime
+    existingSecretPasswordKey: redis-password
+  persistence:
+    enabled: true
+    storageClass: ceph-rbd
+    size: 4Gi
+    existingClaim: buzz-redis-data
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 500m
+      memory: 256Mi
+  nodeSelector:
+    kubernetes.io/hostname: control-plane-1
+minio:
+  enabled: false
+s3:
+  endpoint: http://buzz-minio:9000
+  bucket: buzz-media
+  region: us-east-1
+  addressingStyle: path
+ingress:
+  enabled: false
+httproute:
+  enabled: false
+pairingRelay:
+  enabled: false
+storageAccounting:
+  enabled: false
+  relayMode: 'off'
+extraInitContainers:
+- name: initialize-bucket
+  image: ghcr.io/block/buzz-minio@sha256:b8470bbeafbf57b20c86cf63804682b714bdcfdbb517f3770247e321e623f48f
+  securityContext:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+      - ALL
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 250m
+      memory: 128Mi
+  env:
+  - name: MC_CONFIG_DIR
+    value: /tmp/.mc
+  - name: S3_ACCESS_KEY
+    valueFrom:
+      secretKeyRef:
+        name: buzz-runtime
+        key: BUZZ_S3_ACCESS_KEY
+  - name: S3_SECRET_KEY
+    valueFrom:
+      secretKeyRef:
+        name: buzz-runtime
+        key: BUZZ_S3_SECRET_KEY
+  command:
+  - /bin/sh
+  - -ec
+  args:
+  - 'mc alias set local http://buzz-minio:9000 "$S3_ACCESS_KEY" "$S3_SECRET_KEY"
+
+    mc mb --ignore-existing local/buzz-media
+
+    mc anonymous set none local/buzz-media
+
+    '
