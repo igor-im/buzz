@@ -2,11 +2,15 @@
 
 Status: runtime removed at the user's request on 2026-09-29 (America/Chicago).
 The Helm release, standalone MinIO workload, ExternalSecret, runtime Secret,
-Ingress and Tailscale proxy are gone. The namespace and four PVCs remain for
-recovery, along with local app data and 1Password items. The addresses below
-are historical; the reproduction commands would reinstall the service.
+Ingress and Tailscale proxy are gone. The user subsequently authorized data
+deletion: the namespace, four PVCs, local app data and OS keyring entry are
+deleted. Backing Ceph volume reclamation is blocked: three PVs are terminating
+with an RBD "still being used" error and one remains attached to
+worker-general-1. The two 1Password items require operator deletion because
+the service account is read-only. The addresses below are historical; the
+reproduction commands would reinstall the service after credentials exist.
 See `.aisteering/summaries/2026-09-29-removal.md` for verification and the
-remaining local package removal step.
+remaining storage and vault cleanup steps. The desktop package is uninstalled.
 
 This application-owned configuration deploys Buzz into namespace `buzz` on
 Kubernetes context `tailscale-operator.tailc69d48.ts.net`.
