@@ -1,5 +1,13 @@
 # Buzz on the tailnet
 
+Status: runtime removed at the user's request on 2026-09-29 (America/Chicago).
+The Helm release, standalone MinIO workload, ExternalSecret, runtime Secret,
+Ingress and Tailscale proxy are gone. The namespace and four PVCs remain for
+recovery, along with local app data and 1Password items. The addresses below
+are historical; the reproduction commands would reinstall the service.
+See `.aisteering/summaries/2026-09-29-removal.md` for verification and the
+remaining local package removal step.
+
 This application-owned configuration deploys Buzz into namespace `buzz` on
 Kubernetes context `tailscale-operator.tailc69d48.ts.net`.
 
