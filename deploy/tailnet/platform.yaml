@@ -1,0 +1,143 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: buzz
+---
+apiVersion: external-secrets.io/v1
+kind: ExternalSecret
+metadata:
+  name: buzz-runtime
+  namespace: buzz
+spec:
+  refreshInterval: 1h
+  secretStoreRef:
+    name: onepassword
+    kind: ClusterSecretStore
+  target:
+    name: buzz-runtime
+    creationPolicy: Owner
+    deletionPolicy: Retain
+  data:
+    - secretKey: BUZZ_RELAY_PRIVATE_KEY
+      remoteRef: {key: app-buzz, property: BUZZ_RELAY_PRIVATE_KEY}
+    - secretKey: BUZZ_GIT_HOOK_HMAC_SECRET
+      remoteRef: {key: app-buzz, property: BUZZ_GIT_HOOK_HMAC_SECRET}
+    - secretKey: DATABASE_URL
+      remoteRef: {key: app-buzz, property: DATABASE_URL}
+    - secretKey: REDIS_URL
+      remoteRef: {key: app-buzz, property: REDIS_URL}
+    - secretKey: postgres-password
+      remoteRef: {key: app-buzz, property: POSTGRES_PASSWORD}
+    - secretKey: redis-password
+      remoteRef: {key: app-buzz, property: REDIS_PASSWORD}
+    - secretKey: BUZZ_S3_ACCESS_KEY
+      remoteRef: {key: app-buzz, property: BUZZ_S3_ACCESS_KEY}
+    - secretKey: BUZZ_S3_SECRET_KEY
+      remoteRef: {key: app-buzz, property: BUZZ_S3_SECRET_KEY}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: buzz-minio
+  namespace: buzz
+spec:
+  accessModes: [ReadWriteOnce]
+  storageClassName: ceph-rbd
+  resources:
+    requests:
+      storage: 10Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: buzz-minio
+  namespace: buzz
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels: {app.kubernetes.io/name: buzz-minio}
+  template:
+    metadata:
+      labels: {app.kubernetes.io/name: buzz-minio}
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile: {type: RuntimeDefault}
+      containers:
+        - name: minio
+          image: ghcr.io/block/buzz-minio@sha256:b8470bbeafbf57b20c86cf63804682b714bdcfdbb517f3770247e321e623f48f
+          args: [server, /data, --console-address, ':9001']
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities: {drop: [ALL]}
+          env:
+            - name: MINIO_ROOT_USER
+              valueFrom:
+                secretKeyRef: {name: buzz-runtime, key: BUZZ_S3_ACCESS_KEY}
+            - name: MINIO_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef: {name: buzz-runtime, key: BUZZ_S3_SECRET_KEY}
+          ports:
+            - {name: api, containerPort: 9000}
+          resources:
+            requests: {cpu: 100m, memory: 256Mi}
+            limits: {cpu: '1', memory: 1Gi}
+          readinessProbe:
+            httpGet: {path: /minio/health/ready, port: api}
+            periodSeconds: 5
+          livenessProbe:
+            httpGet: {path: /minio/health/live, port: api}
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          volumeMounts:
+            - {name: data, mountPath: /data}
+      volumes:
+        - name: data
+          persistentVolumeClaim: {claimName: buzz-minio}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: buzz-minio
+  namespace: buzz
+spec:
+  selector: {app.kubernetes.io/name: buzz-minio}
+  ports:
+    - {name: api, port: 9000, targetPort: api}
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: buzz
+  namespace: buzz
+spec:
+  ingressClassName: tailscale
+  tls:
+    - hosts: [buzz]
+  rules:
+    - http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: buzz
+                port: {number: 3000}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: buzz-redis-data
+  namespace: buzz
+spec:
+  accessModes: [ReadWriteOnce]
+  storageClassName: ceph-rbd
+  resources:
+    requests:
+      storage: 4Gi

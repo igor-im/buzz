@@ -1,0 +1,22 @@
+# Language
+
+- **Catalog entry:** One categorized versioned skill artifact description with applicability, dependencies, immutable source, integrity, provenance, targets, and installation surfaces.
+- **Skill selection:** The project-owned `.aisteering/skills.json` declaration of requested entries, capabilities, explicit resolutions, profiles, and agent targets.
+- **Portable skill lock:** The tracked `.aisteering/skills.lock.json` resolution containing exact catalog and artifact identities without machine-specific state.
+- **Repository facts:** Deterministic observations used to evaluate applicability. They never silently choose among compatible entries.
+- **Skill installation:** Disposable ignored content under `.agents/skills/` reproduced from the portable lock.
+- **Local installation state:** Ignored hashes, active profile, cache, and provider discovery under `.agents/` and `.claude/skills`.
+- **Hydrate:** Reproduce ignored local content from the portable lock and verified artifact bytes.
+- **Activate:** Transactionally replace local guidance with one explicitly named locked profile.
+- **Doctor:** Verify the portable contracts, local state, installed hashes, and provider discovery agree.
+- **Seed:** Starter project content created only when absent and then owned by this repository.
+- **Project-owned file:** Repository knowledge or policy whose current local content is authoritative and is not installation drift.
+- **Project authority map:** `.aisteering/PROJECT.md`, which maps project-state questions to authority locations and lookup procedures without storing mutable status.
+- **Authority:** The configured source that answers one class of project-state question.
+- **Reconciliation:** Resolve current evidence from applicable authorities and report missing or conflicting proof.
+- **Scratchpad:** A mutable dated unresolved cross-session note selected by task, topic, affected path, or decision.
+- **Summary:** An end-of-substantive-turn retrospective recording changes, reasons, validation, risks, and next steps.
+- **Architecture maturity:** The proof level of one architecture or capability: `hypothesis`, `experiment`, `slice-proven`, or `production-approved`; delivery state does not determine it.
+- **Architecture-gate eligible:** The result that the applicable promotion record and evidence permit work requiring a named maturity.
+- **Validation evidence:** A timestamped observed scenario result bound to the commit, environment, procedure, real seams, and substitutions exercised.
+- **Handoff:** A reconciliation report for the next agent; it cites authorities but never supersedes them.

@@ -1,0 +1,2 @@
+# Public owner identity; private key lives only in op://infra/buzz-owner/BUZZ_PRIVATE_KEY
+ownerPubkey: "4c35ed3f746d417b2c541e474507d4e8b6cec8c34f5aca4c16809ccaac20f877"

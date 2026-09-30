@@ -1,3 +1,6 @@
+For this tailnet deployment, read `.aisteering/PROJECT.md` and
+`deploy/tailnet/README.md`; deployment evidence and handoffs live under `.aisteering/`.
+
 # AGENTS.md — AI Agent Contributor Guide
 
 This guide is for AI agents contributing to the Buzz codebase. It covers
